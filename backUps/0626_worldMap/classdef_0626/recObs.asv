@@ -1,0 +1,22 @@
+classdef recObs < obstacles
+    properties
+        vertices
+    end
+    methods
+         % constructor
+        function obj = recObs(v,t)
+            if nargin > 1
+                super_arg{1} = 
+            end
+
+            obj@obstacles(t);
+%             if nargin > 1  % allows calls of constructor with no arguments, e.g. a(1,7) = points(7), 1-6 has not arguments
+%                 obj@obstacles(t);
+%                 obj.vertices = v;
+%             else
+%                 obj@obstacles();
+%                 obj.vertices = NaN;
+%             end
+        end
+    end
+end

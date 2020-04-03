@@ -1,0 +1,1 @@
+This branch is used to test how genetic algs perform of the MINLP problem. The idea is to use the multicore advantage of gene package in MATLAB

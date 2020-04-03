@@ -1,0 +1,59 @@
+figure
+
+targets(4).loc(2) = 6.8;
+inds = [28,14,29,6,26,13,24,1];
+xt4 = targets(4).loc;
+for i=1:length(inds)
+    xt = targets(inds(i)).loc;
+    plot([xt4(1),xt(1)],[xt4(2),xt(2)],'r-')
+    hold on
+    x1 = xt4(1);
+    y1 = xt4(2);
+    x2 = xt(1);
+    y2 = xt(2);
+    angle = atan2(y2-y1, x2-x1);
+    % plot intermediate robots
+    num_plot = floor(sqrt(sum(([x1,y1]-[x2,y2]).^2))/plot_grid);
+    for m = 1:num_plot
+        plot_FOV(x1+plot_grid*m*cos(angle), y1+plot_grid*m*sin(angle), angle, false);
+        hold on
+    end
+    hold on
+end
+
+
+for i=1:length(ind_t)
+    xt = targets(ind_t(i)).loc;
+%     if any(xt > w_xmax)
+%         continue
+%     end
+    
+%     plot(xt(1),xt(2),'ko') 
+    plot(xt(1),xt(2),'.r', 'MarkerSize',20)
+    text(xt(1),xt(2)-0.1,num2str(i))
+    hold on
+end
+
+for i=1:size(walls,2)
+    v = walls(i).vertices;
+    x = round(v(1,:),1);
+    y = round(v(2,:),1);  
+    k = convhull(x,y);
+    fill(x(k),y(k),'k')
+%     text(x,y-0.1,num2str(i))
+    hold on
+end
+
+for i=1:size(recFur,2)
+    v = recFur(i).vertices;
+    x = round(v(1,:),1);
+    y = round(v(2,:),1);
+    k = convhull(x,y);
+    fill(x(k),y(k),'k')
+%     text(x,y-0.1,num2str(i))
+    hold on
+end
+axis equal
+xlim([4.7,9.2])
+ylim([0,9.2])
+

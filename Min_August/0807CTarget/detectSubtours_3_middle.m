@@ -1,0 +1,97 @@
+function [subTours,is_loop] = detectSubtours_3_middle(x,idxs)
+% Returns a cell array of subtours. The first subtour is the first row of x, etc.
+
+%   Copyright 2014 The MathWorks, Inc. 
+
+x = round(x); % correct for not-exactly integers
+r = find(x); % indices of the trips that exist in the solution
+substuff = idxs(r,:); % the collection of node pairs in the solution
+unvisited = ones(length(r),1); % keep track of places not yet visited
+curr = 1; % subtour we are evaluating
+% startour = find(unvisited,1); % first unvisited trip
+dummy = max(substuff(:,1));
+
+% find loops with dummy
+start_indices = find(substuff(:,1)==dummy); % first unvisited trip
+    for m = 1:length(start_indices)
+        startour = start_indices(m);
+        flag = false;
+        home = substuff(startour,1); % starting point of subtour
+        if home == dummy
+            flag = true;
+        end
+        nextpt = substuff(startour,2); % next point of tour
+        visited = nextpt; unvisited(startour) = 0; % update unvisited points
+        while nextpt ~= home
+            if nextpt == dummy
+                flag = true;
+            end
+            
+            % Find the other trips that starts at nextpt
+            [srow,scol] = find(substuff == nextpt);
+            % Find just the new trip
+            trow = srow(srow ~= startour);
+%             trow = trow(1);
+            for i=1:length(trow)
+                if unvisited(trow(i)) == 1
+                    break
+                end
+            end
+            trow = trow(i);
+            scol = 3-scol(srow == trow); % turn 1 into 2 and 2 into 1
+            startour = trow; % the new place on the subtour
+            nextpt = substuff(startour,scol); % the point not where we came from
+            visited = [visited,nextpt]; % update nodes on the subtour
+            unvisited(startour) = 0; % update unvisited
+        end
+
+        subTours{curr} = visited; % store in cell array
+        is_loop(curr) = ~isempty(nextpt);
+        curr = curr + 1; % next subtour
+
+%         startour = find(substuff(:,1)==dummy,1); % first unvisited trip
+    end
+
+
+
+
+startour = find(unvisited,1); % first unvisited trip
+% count loops without dummy
+    while ~isempty(startour)
+        flag = false;
+        home = substuff(startour,1); % starting point of subtour
+        if home == dummy
+            flag = true;
+        end
+        nextpt = substuff(startour,2); % next point of tour
+        visited = nextpt; unvisited(startour) = 0; % update unvisited points
+        while nextpt ~= home
+            if nextpt == dummy
+                flag = true;
+            end
+            
+            % Find the other trips that starts at nextpt
+            [srow,scol] = find(substuff == nextpt);
+            % Find just the new trip
+            trow = srow(srow ~= startour);
+%             trow = trow(1);
+            for i=1:length(trow)
+                if unvisited(trow(i)) == 1
+                    break
+                end
+            end
+            trow = trow(i);
+            scol = 3-scol(srow == trow); % turn 1 into 2 and 2 into 1
+            startour = trow; % the new place on the subtour
+            nextpt = substuff(startour,scol); % the point not where we came from
+            visited = [visited,nextpt]; % update nodes on the subtour
+            unvisited(startour) = 0; % update unvisited
+        end
+        if ~flag % no dummy in the loop
+            subTours{curr} = visited; % store in cell array
+            is_loop(curr) = ~isempty(nextpt);
+            curr = curr + 1; % next subtour
+        end
+        startour = find(unvisited,1); % first unvisited trip
+    end
+end

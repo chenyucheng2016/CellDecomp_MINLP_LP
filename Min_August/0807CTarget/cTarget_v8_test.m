@@ -1,0 +1,267 @@
+
+% Min. 7/26/2017
+
+%{
+Update: 
+Now can plot 3d C-target: x y theta
+
+Notes:
+Note that the target under the table is omitted
+
+%}
+
+% clear all;
+addpath('/Users/min/Google Drive/pathPlanning(1)/infoData')
+addpath('/Users/min/Google Drive/pathPlanning(1)/classdef')
+addpath('C:\Users\Ferrari Lab\Google Drive\pathPlanning\infoData')
+addpath('C:\Users\Ferrari Lab\Google Drive\pathPlanning\classdef')
+%%%%%%%% MAIN
+ [targets,walls,recFur,cirFur,UGV] = buildAll();
+
+
+% NOW TESTING
+obstacles = {walls,recFur,cirFur};
+% global A
+% A = CFree(obstacles);
+% plotCTarget(A); % it is Cfree
+% 3D plot
+% [x y z] = ind2sub(size(A), find(A));
+% plot3(x, y, z, 'k.');
+
+
+ B = CTarget(targets,obstacles);
+plotCTarget3d(B)
+
+hold on
+
+
+hold on
+%  B = CTarget(targets,obstacles);
+% plotCTarget(B);
+% plotCTarget(A); % it is Cfree
+% hold on
+% plotAll(targets,walls,recFur,cirFur,UGV);   % any chance to modify this?
+% alpha(0.3)
+% END TESTING
+
+
+%%%%%%%%% FUNCTIONS
+
+% % build env.   varargout = {targets,walls};
+function varargout = buildAll()
+% building targets
+load('targetLocs');
+targetsLoc = locs'; 
+
+for i = 9
+    targets(1,1)=  points([targetsLoc(i,1)   targetsLoc(i,2)],'target');
+end
+
+
+% build walls
+load('walls.mat');
+ walls = recObs(coors{5},'wall');
+
+% build recFur
+load('recFurCor.mat');
+recFur=[];
+
+
+% build cirFur
+load('cirFurCor.mat');
+i = 2;
+cirFur = cirObs(cirFurCor{i}(1:2),cirFurCor{i}(3),'furniture');
+
+
+% build UGV
+fov = [0.3  0.8  1.0472];
+loc = [4.5906  4.5842  pi];
+size = [0.12  0.1];
+UGV = robot(loc,fov,size);
+
+
+varargout = {targets,walls,recFur,cirFur,UGV};
+
+end
+
+% generate a C-target distribution in the worldSpace
+function A = CFree(obstacles)
+n = 150;  % # of step of sampling
+m = 60; % theta steps
+
+myStart = 0;
+myEnd = 9.2;
+
+step = (myEnd-myStart)/n;
+xs = linspace(myStart,myEnd,n);
+ys = linspace(myStart,myEnd,n);
+A = zeros(n,n,m);
+tempA = zeros(n,n);
+% ts = linspace(0,2*pi,m+1); % theta 
+
+% build a test robot
+fov = [0.3  0.8  1.0472];
+loc = [0   0   pi];
+size = [0.12  0.1];
+tester = robot(loc,fov,size);
+% for k = 1:length(ts)-1
+%     currentTheta = ts(k);
+currentTheta = pi;
+for i = 1:length(xs)    
+    for j = 1:length(ys)
+        tester.loc = [myStart+(j-1)*step+step/2  myStart+(i-1)*step+step/2  currentTheta] ;  % j indicates increment in x
+        if inCFree(tester,obstacles)
+%             A(i,j,k) = 1;
+tempA(i,j) = 1;
+
+        end
+    end
+% end
+
+% make 2D C-free into  3D
+
+for p = 1:m
+    A(:,:,p) = tempA;
+end
+end
+end
+
+% 3D generate a C-target distribution in the worldSpace
+function B = CTarget(targets,obstacles)
+ H = load('Cfree_zoom_v1'); A = H.A;
+% global A
+Asize = size(A);
+n = Asize(1);% # of step of sampling
+m = Asize(3); % step of theta
+myStart = 0;
+myEnd = 9.2;
+step = (myEnd-myStart)/n;
+xs = linspace(myStart,myEnd,n);
+ys = linspace(myStart,myEnd,n);
+% ts = linspace(0,2*pi,m+1); % theta 
+ts = linspace(-pi,pi,m+1); % theta 
+% B = zeros(n,n,m);
+B = cell(1,m);   % store m layers
+
+% build a test robot
+fov = [0.3  0.8  1.0472];
+loc = [0   0   pi];
+robotSize = [0.1  0.12];
+tester = robot(loc,fov,robotSize);
+for k = 1:length(ts)-1
+    currentTheta = ts(k);
+    tempB = NaN(n,n);
+    for i = 1:length(xs)
+        for j = 1:length(ys)
+            % j indicates increment in x
+            tester.loc = [myStart+(j-1)*step+step/2  myStart+(i-1)*step+step/2  currentTheta] ;  
+            if A(i,j,m) == 1 % if not in C-free, not in C-target
+                if inCTarget(tester,targets,obstacles)
+                    tempB(i,j) = currentTheta;
+                end
+            end
+        end
+    end
+    B{k} = tempB;
+end
+end
+
+
+
+% 2D generate a C-target distribution in the worldSpace
+function B = CTarget2(targets,obstacles)
+H = load('Cfree'); A = H.A;
+n = length(A);% # of step of sampling
+m = 10; % step of theta
+myStart = 0;
+myEnd = 9.2;
+step = (myEnd-myStart)/n;
+xs = linspace(myStart,myEnd,n);
+ys = linspace(myStart,myEnd,n);
+ts = linspace(0,2*pi,m); % theta 
+
+B = zeros(n,n);
+
+% build a test robot
+fov = [0.3  0.8  1.0472];
+loc = [0   0   pi];
+size = [0.1  0.12];
+tester = robot(loc,fov,size);
+for i = 1:length(xs)    
+    for j = 1:length(ys)
+        tester.loc = [myStart+(j-1)*step+step/2  myStart+(i-1)*step+step/2  tester.loc(3)] ;  % j indicates increment in x
+        if A(i,j)== 1 % if not in C-free, not in C-target           
+            if inCTarget(tester,targets,obstacles)
+            B(i,j) = 1;
+            end
+        end
+    end
+end
+end
+
+
+
+% % plot functions
+
+% plot all elements, such as targets, obstacles
+function plotAll(targets,walls,recFur,cirFur,UGV)
+
+figure(1)
+hold on
+xlim([0  9.2])
+ylim([0  9.2])
+axis equal
+
+plotPtArr(targets,'k*')% plot all points
+
+for i = 1:10
+plotObjArr(walls,'k'); %plotting walls
+plotObjArr(recFur,'c'); %plotting obs
+end
+
+plotObjArr(cirFur,'c'); %plotting obs
+
+% plotRobot(UGV);
+% drawFOV(UGV);
+
+end
+
+% plot for points
+function plotPtArr(ptArr,varargin)
+
+% if nargin == 1
+    for x = ptArr
+        plotPt(x,varargin{:})
+    end
+% end
+end
+
+%  draws array of obstacle objects, color (e.g.'k') and hollow(true) is optional.
+function plotObjArr(obsArr,varargin)
+    for x = obsArr
+        plotObs(x,varargin{:});
+    end
+   
+end
+% 2D
+function plotCTarget(B)
+x = [0 9.2];
+y = [0 9.2];
+% colormap(gray)
+% im.AlphaData = .2;
+ imagesc(x,y,B)
+
+cmap = [.3 .3 .3 %// light gray
+        1  1  1] %// white
+colormap(cmap)
+% colorbar('Ytick',[.25 .75],'Yticklabel',[0 1]) 
+% colorbar
+set(gca,'YDir','normal')  % otherwise the y axis is flipped
+end
+
+function plotCTarget3d(B)
+figure; hold on
+for i =1:length(B)
+    surf(B{i});
+end
+end

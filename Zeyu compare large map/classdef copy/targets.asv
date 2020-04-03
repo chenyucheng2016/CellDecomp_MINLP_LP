@@ -1,0 +1,36 @@
+classdef targets < points
+    properties
+        init_cueLev
+        crt_cueLev
+        crt_id  % id at the current cueLev
+        y_ans % classification
+    end
+    methods
+     % constructor
+        function targets = targets(loc,type,init_cueLev,crt_id,y_ans)
+            if nargin > 4
+                super_arg{1} = loc;
+                super_arg{2} = type;
+            else
+                super_arg{1} = NaN;
+                super_arg{2} = NaN;
+            end
+            targets@points(super_arg{:});
+            if nargin > 4
+                targets.init_cueLev = init_cueLev;
+                targets.crt_cueLev = init_cueLev;
+                targets.crt_id = crt_id;
+                targets.y_ans = y_ans;
+            else
+                recObj.vertices = NaN;
+            end
+%             if nargin > 1  % allows calls of constructor with no arguments, e.g. a(1,7) = points(7), 1-6 has not arguments
+%                 obj@obstacles(t);
+%                 obj.vertices = v;
+%             else
+%                 obj@obstacles();
+%                 obj.vertices = NaN;
+%             end
+        end
+    end
+end

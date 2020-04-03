@@ -1,0 +1,25 @@
+classdef cirObs < obstacles
+    properties
+        loc
+        rad
+    end
+    
+    methods
+         % constructor
+        function cirObj = cirObs(loc,rad,t)
+            if nargin > 2
+                super_arg{1} = t;
+            else
+                super_arg{1} = NaN;
+            end
+            cirObj@obstacles(super_arg{:});
+            if nargin > 1
+                recObj.vertices = v;
+            else
+                recObj.vertices = NaN;
+            end
+
+        end
+        
+    end
+end
